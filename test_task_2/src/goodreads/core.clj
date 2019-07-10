@@ -6,8 +6,7 @@
 (ns goodreads.core
   (:gen-class)
   (:require [clojure.tools.cli :as cli]
-            [manifold.deferred :as d]
-            [clojure.data.xml :refer :all])
+            [manifold.deferred :as d])
   (:use
    clj-xpath.core))
 
