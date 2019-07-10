@@ -1,6 +1,8 @@
-;; Average rating for similar_books is bugged it show's the same number for all books so I've chosen another strategy: taking up to 20 most rated 'read' books and getting similar from them
+;; Average rating for similar_books is bugged: it shows the same number for all books so I've chosen another strategy: taking up to 20 most rated 'read' books and getting similar from them
 ;; Also there is an assumption that currently-reading shelf contains no more than 20 books (I would not let this go to prod in this way ofc)
 ;; Limit is 1req/sec so i don't want to iterate over all pages of 'currently-reading' (it's enough that it takes 20 sec to iterate over 20 books in 'read')
+;; Also bad idea to store key in source code like this
+;; Collaborative filtering for recommendations is problematic since we don't know how the user rated the books (at least from shelf API)
 (ns goodreads.core
   (:gen-class)
   (:require [clojure.tools.cli :as cli]
@@ -38,7 +40,6 @@
         (Thread/sleep 1000)
         ;; For safety we could've added there a future, but since we are waiting 1sec anyways that would be an overkill
         (swap! read-books-xml (fn [n] (conj n (xmldoc (get-book-info-url book))))))
-      (swap! read-books-xml (fn [n] (shuffle n)))
       (while (and (< @iter (count @read-books-xml))
                   (< (count @similar-books) number-of-books))
         (do (swap! similar-books
@@ -53,6 +54,7 @@
                                                                                                           (nth @read-books-xml @iter)))
                                         ($x:text* "//similar_books/book/link" (nth @read-books-xml @iter))))))))) 
             (swap! iter inc)))
+      (swap! similar-books (fn [n] (shuffle n)))
       (if (<= (count @similar-books) number-of-books)
         @similar-books
         (subvec @similar-books 0 number-of-books))))))
